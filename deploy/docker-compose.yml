@@ -1,0 +1,39 @@
+version: "3.0"
+
+services:
+  router_pub:
+    image: "aak1247/router_pub:latest"
+    container_name: router_pub
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+        - router_pub_net
+    depends_on:
+      - redis_service
+      - pgsql_service
+    environment:
+      ENV: "prod"
+  redis_service:
+    image: redis:5.0
+    container_name: redis
+    hostname: redis
+    command: [ 'redis-server', '--requirepass TdXsC#o24#' ]
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./redisdata:/data
+  pgsql_service:
+    image: postgres:12
+    container_name: pgsql
+    hostname: pgsql
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'TdXsC#o24#'
+      POSTGRES_DB: 'influencer_ai'
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
