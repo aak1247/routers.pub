@@ -40,3 +40,60 @@ func DepSetToMap(m map[string]interface{}, key string, keySep string, value inte
 		}
 	}
 }
+
+// 扁平化多级map，key使用keySep连接
+func FlattenMap(m map[string]interface{}, keySep string, keyPrefix string) map[string]interface{} {
+	flattenedMap := make(map[string]interface{})
+	for k, v := range m {
+		if keyPrefix != "" {
+			k = keyPrefix + keySep + k
+		}
+		flattenedMap[k] = v // 先把当前层级的key-value放入结果
+		if vMap, ok := v.(map[string]interface{}); ok {
+			for fk, fv := range FlattenMap(vMap, keySep, k) {
+				flattenedMap[fk] = fv
+			}
+		}
+	}
+	return flattenedMap
+}
+
+func GetFuzzyMap(m map[string]interface{}, key string) map[string]interface{} {
+	fuzzyMap := make(map[string]interface{})
+	for k, v := range m {
+		if strings.Contains(k, key) {
+			fuzzyMap[k] = v
+		}
+	}
+	return fuzzyMap
+}
+
+func TraverseMapString(m map[string]interface{}, f func(key string, value string) string) {
+	for k, v := range m {
+		switch v.(type) {
+		case string:
+			m[k] = f(k, v.(string))
+		case map[string]interface{}:
+			TraverseMapString(v.(map[string]interface{}), f)
+		case []interface{}:
+			for _, v := range v.([]interface{}) {
+				switch v.(type) {
+				case string:
+					m[k] = f(k, v.(string))
+				case map[string]interface{}:
+					TraverseMapString(v.(map[string]interface{}), f)
+				}
+			}
+		case map[string]string:
+			for k, v := range v.(map[string]string) {
+				m[k] = f(k, v)
+			}
+		}
+	}
+}
+
+func TraverseStringMap(m map[string]string, f func(key string, value string)) {
+	for k, v := range m {
+		f(k, v)
+	}
+}

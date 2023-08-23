@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"routers.pub/framework"
 	"routers.pub/utils"
+	"strings"
 )
 
 type (
@@ -66,6 +67,8 @@ type (
 		ActualHookParams  *map[string]interface{} `gorm:"-" json:"-"`
 		// 实际hook体
 		ActualHookBody *map[string]interface{} `gorm:"-" json:"-"`
+		// 缓存所有变量（带路径），一级
+		AllVariables *map[string]interface{} `gorm:"-" json:"-"`
 	}
 )
 
@@ -91,6 +94,12 @@ const (
 	ParamTypeQuery  ParamType = "query"
 	ParamTypePath   ParamType = "path"
 	ParamTypeBody   ParamType = "body"
+)
+
+var (
+	HEADER_MATCHER = utils.NewMatcher("#header\\.([^#]+)#")
+	QUERY_MATCHER  = utils.NewMatcher("#query\\.([^#]+)#")
+	BODY_MATCHER   = utils.NewMatcher("\\${([^}]+)}")
 )
 
 // TableName sets the insert table name for this struct type
@@ -141,6 +150,21 @@ func (h *Stream) ParseRequest(req *http.Request) *Stream {
 		h.AddError(err)
 	}
 	h.ActualRequestBody = &body
+
+	// 缓存所有变量到allVariables
+	allVariables := make(map[string]interface{})
+	for key, value := range headers {
+		allVariables["#header."+key+"#"] = value
+	}
+	for key, value := range params {
+		allVariables["#query."+key+"#"] = value
+	}
+	flattenBody := utils.FlattenMap(body, ".", "")
+	for key, value := range flattenBody {
+		allVariables["${"+key+"}"] = value
+	}
+	h.AllVariables = &allVariables
+
 	return h
 }
 
@@ -211,7 +235,45 @@ func (h *Stream) Transform() *Stream {
 			}
 		}
 	}
+
+	// 处理hook各字段中的占位符
+	if h.ActualHookHeaders != nil {
+		utils.TraverseStringMap(*h.ActualHookHeaders, func(key string, value string) {
+			(*h.ActualHookHeaders)[key] = h.formatValue(value)
+		})
+	}
+
+	if h.ActualHookParams != nil {
+		utils.TraverseMapString(*h.ActualHookParams, func(key string, value string) string {
+			return h.formatValue(value)
+		})
+	}
+
+	if h.ActualHookBody != nil {
+		utils.TraverseMapString(*h.ActualHookBody, func(key string, value string) string {
+			return h.formatValue(value)
+		})
+	}
+
 	return h
+}
+
+func (h *Stream) formatValue(value string) string {
+	// 匹配占位符
+	headerMatched := HEADER_MATCHER.FindAllStringSubmatch(value, -1)
+	queryMatched := QUERY_MATCHER.FindAllStringSubmatch(value, -1)
+	bodyMatched := BODY_MATCHER.FindAllStringSubmatch(value, -1)
+	allMatched := append(append(headerMatched, queryMatched...), bodyMatched...)
+	for _, matched := range allMatched {
+		matchText := matched[0]
+		// 获取变量名
+		//variableName := matched[1] // 这里得测一下
+		// 获取变量值
+		variableValue := (*h.AllVariables)[matchText]
+		// 替换占位符
+		value = strings.ReplaceAll(value, matchText, fmt.Sprintf("%v", variableValue))
+	}
+	return value
 }
 
 func (h *Stream) DoRequest() (*http.Response, error) {
