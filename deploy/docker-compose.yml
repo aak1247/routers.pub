@@ -16,11 +16,17 @@ services:
       - pgsql_service
     environment:
       ENV: "prod"
+      POSTGRESQL_HOST: "pgsql"
+      POSTGRESQL_USER: "postgres"
+      POSTGRESQL_PASSWORD: "password"
+      POSTGRESQL_DBNAME: "router_pub"
+      REDIS_HOST: "redis"
+      REDIS_PASSWORD: "password"
   redis_service:
     image: redis:5.0
     container_name: redis
     hostname: redis
-    command: [ 'redis-server', '--requirepass TdXsC#o24#' ]
+    command: [ 'redis-server', '--requirepass password' ]
     ports:
       - '6379:6379'
     volumes:
@@ -31,8 +37,8 @@ services:
     hostname: pgsql
     environment:
       POSTGRES_USER: 'postgres'
-      POSTGRES_PASSWORD: 'TdXsC#o24#'
-      POSTGRES_DB: 'influencer_ai'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'router_pub'
     ports:
       - '5432:5432'
     volumes:

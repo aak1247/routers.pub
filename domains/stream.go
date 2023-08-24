@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"routers.pub/framework"
+	"routers.pub/infra"
 	"routers.pub/utils"
 	"strings"
 )
@@ -127,12 +128,16 @@ func (h *Stream) ParseRequest(req *http.Request) *Stream {
 		headers[key] = value[0]
 	}
 	h.ActualRequestHeaders = &headers
+	infra.Log.Debug("request headers: ", headers)
+
 	// 解析请求参数
 	params := make(map[string]string)
 	for key, value := range req.URL.Query() {
 		params[key] = value[0]
 	}
 	h.ActualRequestParams = &params
+	infra.Log.Debug("request params: ", params)
+
 	// 解析请求体
 	body := make(map[string]interface{})
 	switch h.RequestContentType {
@@ -150,6 +155,8 @@ func (h *Stream) ParseRequest(req *http.Request) *Stream {
 		h.AddError(err)
 	}
 	h.ActualRequestBody = &body
+	// 日志
+	infra.Log.Debug("request body: ", body)
 
 	// 缓存所有变量到allVariables
 	allVariables := make(map[string]interface{})
@@ -164,6 +171,7 @@ func (h *Stream) ParseRequest(req *http.Request) *Stream {
 		allVariables["${"+key+"}"] = value
 	}
 	h.AllVariables = &allVariables
+	infra.Log.Debug("request variables: ", allVariables)
 
 	return h
 }
