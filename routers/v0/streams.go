@@ -3,7 +3,6 @@ package v0
 import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
-	"net/http"
 	"routers.pub/domains"
 	"routers.pub/framework"
 	"routers.pub/utils"
@@ -59,54 +58,26 @@ func callStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 // 创建stream
 func addStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 	var req AddStreamReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		routerCtx.AddError(err)
-		return
-	}
-	stream := (&domains.Stream{}).UpdateByParam(req)
-	if stream.HasError() {
-		routerCtx.AddError(stream.GetError())
-		return
-	}
-	if stream = stream.Save(routerCtx); stream.HasError() {
-		routerCtx.AddError(stream.GetError())
-		return
-	}
-	c.JSON(http.StatusOK, stream)
+	routerCtx.BindJSON(&req)
+	stream := (&domains.Stream{}).UpdateByParam(req).Save(routerCtx)
+	routerCtx.Response(stream)
 }
 
 func updateStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 	var req AddStreamReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		routerCtx.AddError(err)
-		return
-	}
-	id := c.Param("streamId")
-	if id == "" {
-		routerCtx.AddError(framework.NewError("id is empty"))
-		return
-	}
-	stream := (&domains.Stream{}).SetId(id).
+	var streamId string
+	routerCtx.BindJSON(&req).
+		BindParam("streamId", &streamId, true)
+	stream := (&domains.Stream{}).SetId(streamId).
 		Find(routerCtx).
 		UpdateByParam(req).
 		Save(routerCtx)
-	if stream.HasError() {
-		routerCtx.AddError(stream.GetError())
-		return
-	}
-	c.JSON(http.StatusOK, stream)
+	routerCtx.Response(stream)
 }
 
 func getStreams(c *gin.Context, routerCtx *framework.RouterCtx) {
 	var stream = &domains.Stream{}
-	if err := framework.BindQuery(c, stream); err != nil {
-		routerCtx.AddError(err)
-		return
-	}
+	routerCtx.BindQuery(stream)
 	var streams = stream.FindAll(routerCtx)
-	if streams.HasError() {
-		routerCtx.AddError(streams.GetError())
-		return
-	}
-	c.JSON(http.StatusOK, streams)
+	routerCtx.Response(streams)
 }

@@ -362,3 +362,8 @@ curl --location --request POST 'http://routers.pub.aak1247.cn/v0/hooks/streams/2
 - gorm
 - json
 - search: key  / -
+- response: short: true / false ; mask: true / false; maskStart: number; maskEnd: number
+
+## TODO
+
+- streams 串联：stream1 -> stream2 -> stream3

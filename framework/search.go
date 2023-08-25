@@ -28,7 +28,7 @@ func (si *SearchInfo) ParseTag(str string) *SearchInfo {
 	return si
 }
 
-func BindQuery(c *gin.Context, s interface{}) error {
+func bindQuery(c *gin.Context, s interface{}) error {
 	// 反射
 	t := reflect.TypeOf(s).Elem()
 	v := reflect.ValueOf(s).Elem()

@@ -1,9 +1,25 @@
 package utils
 
 import (
+	"net/http"
 	"reflect"
 	"strings"
 )
+
+type ErrorMessage struct {
+	Code       int    `json:"code"`
+	Message    string `json:"message"`
+	StatusCode int    `json:"-"` // http status code
+}
+
+type ICanHasError interface {
+	HasError() bool
+	AddError(err error) ICanHasError
+	AddErrors(errs []error) ICanHasError
+	GetErrors() []error
+	GetError() error
+	AsErrorMessage() ErrorMessage
+}
 
 type CanHasError struct {
 	Errors []error `gorm:"-" json:"-"`
@@ -13,18 +29,20 @@ func (e *CanHasError) HasError() bool {
 	return e.Errors != nil && len(e.Errors) != 0
 }
 
-func (e *CanHasError) AddError(err error) {
+func (e *CanHasError) AddError(err error) ICanHasError {
 	if e.Errors == nil {
 		e.Errors = make([]error, 0)
 	}
 	e.Errors = append(e.Errors, err)
+	return e
 }
 
-func (e *CanHasError) AddErrors(errs []error) {
+func (e *CanHasError) AddErrors(errs []error) ICanHasError {
 	if e.Errors == nil {
 		e.Errors = make([]error, 0)
 	}
 	e.Errors = append(e.Errors, errs...)
+	return e
 }
 
 func (e *CanHasError) GetErrors() []error {
@@ -36,6 +54,21 @@ func (e *CanHasError) GetError() error {
 		return nil
 	}
 	return e.Errors[0]
+}
+
+func (e *CanHasError) AsErrorMessage() ErrorMessage {
+	if !e.HasError() {
+		return ErrorMessage{
+			Code:       0,
+			Message:    "success",
+			StatusCode: http.StatusOK,
+		}
+	}
+	return ErrorMessage{
+		Code:       -1,
+		Message:    e.Errors[0].Error(),
+		StatusCode: http.StatusInternalServerError,
+	}
 }
 
 func GetColumnNameOfDef(name string, tag string) string {

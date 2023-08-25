@@ -327,6 +327,9 @@ func (h *Stream) DoRequest() (*http.Response, error) {
 }
 
 func (h *Stream) Find(ctx *framework.RouterCtx) *Stream {
+	if ctx.HasError() || h.HasError() {
+		return h
+	}
 	stream := framework.Cached(ctx, h.GetCacheKey(), func() interface{} {
 		stream := &Stream{}
 		if err := ctx.GetDb().Model(h).Where("id = ?", h.ID).First(stream).Error; err != nil {
@@ -339,6 +342,9 @@ func (h *Stream) Find(ctx *framework.RouterCtx) *Stream {
 }
 
 func (h *Stream) FindAll(ctx *framework.RouterCtx) *Streams {
+	if ctx.HasError() || h.HasError() {
+		return (&Streams{}).AddErrors(ctx.GetErrors()).AddErrors(h.GetErrors()).(*Streams)
+	}
 	streams := framework.Cached(ctx, framework.GetSearchKey(h, "streams:"), func() interface{} {
 		streams := &Streams{}
 		streamList := make([]*Stream, 0)
@@ -353,6 +359,9 @@ func (h *Stream) FindAll(ctx *framework.RouterCtx) *Streams {
 }
 
 func (h *Stream) Save(ctx *framework.RouterCtx) *Stream {
+	if ctx.HasError() || h.HasError() {
+		return h
+	}
 	ctx.SetToLocalCache(h.GetCacheKey(), h)
 	if err := ctx.GetDb().Save(h).Error; err != nil {
 		h.AddError(err)
