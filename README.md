@@ -19,7 +19,7 @@
     2. 在来源hook系统中配置webhook，将请求转发到Stream的地址
     3. stream解析请求，并根据定义生成请求，转发到stream中定义的地址
 
-## API
+## Usage
 
 ### 创建Stream
 
@@ -355,3 +355,10 @@ curl --location --request POST 'http://routers.pub.aak1247.cn/v0/hooks/streams/2
   }
 }
 ```
+
+## Design
+
+### Tags
+- gorm
+- json
+- search: key  / -
