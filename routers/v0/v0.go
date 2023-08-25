@@ -7,10 +7,10 @@ import (
 
 func Init(r *gin.RouterGroup) {
 	// 路由
-	r.POST("/streams", middlewares.EnableTransaction, middlewares.WithRouterCtx(AddStream))
-	r.GET("/streams")
+	r.POST("/streams", middlewares.EnableTransaction, middlewares.WithRouterCtx(addStream))
+	r.GET("/streams", middlewares.EnableTransaction, middlewares.WithRouterCtx(getStreams))
 	r.GET("/streams/:streamId")
-	r.PUT("/streams/:streamId", middlewares.EnableTransaction, middlewares.WithRouterCtx(UpdateStream))
+	r.PUT("/streams/:streamId", middlewares.EnableTransaction, middlewares.WithRouterCtx(updateStream))
 	r.DELETE("/streams/:streamId", middlewares.EnableTransaction)
 	r.PATCH("/streams/:streamId", middlewares.EnableTransaction)
 

@@ -57,7 +57,7 @@ func callStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 }
 
 // 创建stream
-func AddStream(c *gin.Context, routerCtx *framework.RouterCtx) {
+func addStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 	var req AddStreamReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		routerCtx.AddError(err)
@@ -75,7 +75,7 @@ func AddStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 	c.JSON(http.StatusOK, stream)
 }
 
-func UpdateStream(c *gin.Context, routerCtx *framework.RouterCtx) {
+func updateStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 	var req AddStreamReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		routerCtx.AddError(err)
@@ -95,4 +95,18 @@ func UpdateStream(c *gin.Context, routerCtx *framework.RouterCtx) {
 		return
 	}
 	c.JSON(http.StatusOK, stream)
+}
+
+func getStreams(c *gin.Context, routerCtx *framework.RouterCtx) {
+	var stream = &domains.Stream{}
+	if err := framework.BindQuery(c, stream); err != nil {
+		routerCtx.AddError(err)
+		return
+	}
+	var streams = stream.FindAll(routerCtx)
+	if streams.HasError() {
+		routerCtx.AddError(streams.GetError())
+		return
+	}
+	c.JSON(http.StatusOK, streams)
 }

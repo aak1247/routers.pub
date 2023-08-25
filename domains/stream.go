@@ -32,11 +32,11 @@ type (
 		Entity
 		utils.CanHasError `gorm:"-" json:"-"`
 		// Name
-		Name string `gorm:"column:name;not null" json:"name"`
+		Name string `gorm:"column:name;not null" json:"name" search:"key:name"`
 		// Description
 		Description string `gorm:"column:description" json:"description"`
 		// Type
-		Type StreamType `gorm:"column:type;not null" json:"type"`
+		Type StreamType `gorm:"column:type;not null" json:"type" search:"key:type"`
 		// 请求体格式
 		RequestContentType ContentType `gorm:"column:request_content_type;not null" json:"requestContentType"`
 		// hook体
@@ -46,7 +46,7 @@ type (
 		// hook参数
 		HookParam *utils.JSONSchema `gorm:"column:hook_param;not null" json:"hookParam"`
 		// hook url
-		HookUrl string `gorm:"column:hook_url;not null" json:"hookUrl"`
+		HookUrl string `gorm:"column:hook_url;not null" json:"hookUrl" search:"key:hookUrl"`
 		// hook method
 		HookMethod HttpMethod `gorm:"column:hook_method;not null" json:"hookMethod"`
 		// hook type
@@ -72,6 +72,10 @@ type (
 		AllVariables *map[string]interface{} `gorm:"-" json:"-"`
 	}
 )
+type Streams struct {
+	utils.CanHasError `gorm:"-" json:"-"`
+	Streams           []*Stream `json:"streams"`
+}
 
 const (
 	StreamTypeSimple StreamType = "simple"
@@ -325,13 +329,27 @@ func (h *Stream) DoRequest() (*http.Response, error) {
 func (h *Stream) Find(ctx *framework.RouterCtx) *Stream {
 	stream := framework.Cached(ctx, h.GetCacheKey(), func() interface{} {
 		stream := &Stream{}
-		if err := ctx.GetDb().Where("id = ?", h.ID).First(stream).Error; err != nil {
+		if err := ctx.GetDb().Model(h).Where("id = ?", h.ID).First(stream).Error; err != nil {
 			stream.AddErrors(h.GetErrors())
 			stream.AddError(err)
 		}
 		return stream
 	}).(*Stream)
 	return stream
+}
+
+func (h *Stream) FindAll(ctx *framework.RouterCtx) *Streams {
+	streams := framework.Cached(ctx, framework.GetSearchKey(h, "streams:"), func() interface{} {
+		streams := &Streams{}
+		streamList := make([]*Stream, 0)
+		if err := ctx.GetDb().Model(h).Find(&streamList).Error; err != nil {
+			streams.AddErrors(h.GetErrors())
+			streams.AddError(err)
+		}
+		streams.Streams = streamList
+		return streams
+	}).(*Streams)
+	return streams
 }
 
 func (h *Stream) Save(ctx *framework.RouterCtx) *Stream {
